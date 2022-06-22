@@ -1,0 +1,39 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        ruby-version:
+          - 3.1
+          - '3.0'
+          - 2.7
+        rails-version:
+          - '7.0'
+          - 6.1
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    env:
+      BUNDLE_GEMFILE: gemfiles/rails${{ matrix.rails-version }}.gemfile
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby ${{ matrix.ruby-version }}
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true # 'bundle install' and cache
+    - name: Run tests
+      run: bundle exec rake
